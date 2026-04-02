@@ -1,0 +1,1814 @@
+<!-- ==========================================
+     TRANSLATE WIDGET - Dịch Ngôn Ngữ Popup
+     Thêm đoạn code này vào trước thẻ </body>
+     ========================================== -->
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+  #tw-root * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* --- Floating Button --- */
+  #tw-fab {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    z-index: 99999;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    background: linear-gradient(135deg, #1a73e8, #0d47a1);
+    box-shadow: 0 4px 20px rgba(26,115,232,0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.25s cubic-bezier(.34,1.56,.64,1), box-shadow 0.25s;
+    outline: none;
+  }
+  #tw-fab:hover {
+    transform: scale(1.1) rotate(-5deg);
+    box-shadow: 0 6px 28px rgba(26,115,232,0.6);
+  }
+  #tw-fab svg { width: 26px; height: 26px; fill: #fff; transition: transform 0.3s; }
+  #tw-fab.active { background: linear-gradient(135deg, #0d47a1, #1a73e8); }
+  #tw-fab.active svg { transform: rotate(180deg); }
+
+  /* Pulse ring */
+  #tw-fab::after {
+    content: '';
+    position: absolute;
+    width: 100%; height: 100%;
+    border-radius: 50%;
+    border: 2px solid rgba(26,115,232,0.5);
+    animation: tw-pulse 2s ease-out infinite;
+  }
+  @keyframes tw-pulse {
+    0% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(1.7); opacity: 0; }
+  }
+
+  /* --- Popup Panel --- */
+  #tw-panel {
+    position: fixed;
+    bottom: 96px;
+    right: 28px;
+    z-index: 99998;
+    width: 340px;
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.18), 0 1.5px 6px rgba(0,0,0,0.08);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    overflow: hidden;
+    transform: scale(0.85) translateY(20px);
+    transform-origin: bottom right;
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.3s cubic-bezier(.34,1.56,.64,1), opacity 0.25s ease;
+  }
+  #tw-panel.open {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  /* Header */
+  #tw-header {
+    background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%);
+    padding: 18px 20px 14px;
+    color: #fff;
+  }
+  #tw-header-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+  #tw-header-top svg { width: 22px; height: 22px; fill: rgba(255,255,255,0.9); flex-shrink: 0; }
+  #tw-title {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -0.2px;
+    color: #fff;
+  }
+  #tw-subtitle {
+    font-size: 11.5px;
+    color: rgba(255,255,255,0.72);
+    padding-left: 32px;
+    line-height: 1.4;
+  }
+
+  /* Body */
+  #tw-body { padding: 16px 18px 18px; }
+
+  /* Lang row */
+  .tw-lang-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .tw-lang-box {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .tw-lang-label {
+    font-size: 10.5px;
+    font-weight: 600;
+    color: #9aa0a6;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+  }
+  .tw-lang-select {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 10px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: #202124;
+    background: #f8f9fa;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='%239aa0a6'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 30px;
+  }
+  .tw-lang-select:focus { border-color: #1a73e8; background: #fff; }
+
+  /* Swap button */
+  #tw-swap {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1.5px solid #e0e0e0;
+    background: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 18px;
+    transition: background 0.2s, border-color 0.2s, transform 0.3s;
+    outline: none;
+  }
+  #tw-swap:hover { background: #e8f0fe; border-color: #1a73e8; transform: rotate(180deg); }
+  #tw-swap svg { width: 16px; height: 16px; fill: #5f6368; }
+  #tw-swap:hover svg { fill: #1a73e8; }
+
+  /* Translate button */
+  #tw-translate-btn {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, #1a73e8, #1557b0);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: opacity 0.2s, transform 0.15s;
+    outline: none;
+    letter-spacing: -0.1px;
+  }
+  #tw-translate-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+  #tw-translate-btn:active { transform: translateY(0); opacity: 1; }
+  #tw-translate-btn svg { width: 18px; height: 18px; fill: #fff; }
+
+  /* Status bar */
+  #tw-status {
+    margin-top: 12px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-size: 12.5px;
+    font-weight: 500;
+    display: none;
+    align-items: center;
+    gap: 8px;
+    line-height: 1.4;
+  }
+  #tw-status.info { background: #e8f0fe; color: #1a73e8; display: flex; }
+  #tw-status.success { background: #e6f4ea; color: #137333; display: flex; }
+  #tw-status.error { background: #fce8e6; color: #c5221f; display: flex; }
+  #tw-status.loading { background: #f1f3f4; color: #5f6368; display: flex; }
+
+  /* Restore button */
+  #tw-restore-btn {
+    width: 100%;
+    margin-top: 8px;
+    padding: 9px;
+    background: transparent;
+    color: #5f6368;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 10px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.2s;
+    outline: none;
+  }
+  #tw-restore-btn:hover { background: #f1f3f4; border-color: #bdc1c6; color: #202124; }
+  #tw-restore-btn svg { width: 14px; height: 14px; fill: currentColor; }
+
+  /* Spinner */
+  .tw-spinner {
+    width: 14px; height: 14px;
+    border: 2px solid rgba(26,115,232,0.3);
+    border-top-color: #1a73e8;
+    border-radius: 50%;
+    animation: tw-spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes tw-spin { to { transform: rotate(360deg); } }
+
+  /* Divider */
+  .tw-divider {
+    height: 1px;
+    background: #f1f3f4;
+    margin: 14px 0;
+  }
+
+  /* Footer */
+  #tw-footer {
+    padding: 0 18px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    color: #9aa0a6;
+    font-size: 11px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+  #tw-footer svg { width: 13px; height: 13px; fill: #9aa0a6; }
+
+  /* Dark overlay on mobile */
+  @media (max-width: 400px) {
+    #tw-panel { width: calc(100vw - 32px); right: 16px; bottom: 84px; }
+    #tw-fab { right: 16px; bottom: 16px; }
+  }
+</style>
+
+<div id="tw-root">
+  <!-- FAB Button -->
+  <button id="tw-fab" title="Dịch trang">
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0014.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/>
+    </svg>
+  </button>
+
+  <!-- Popup Panel -->
+  <div id="tw-panel">
+    <!-- Header -->
+    <div id="tw-header">
+      <div id="tw-header-top">
+        <svg viewBox="0 0 24 24"><path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0014.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/></svg>
+        <span id="tw-title">Dịch Trang</span>
+      </div>
+      <div id="tw-subtitle">Dịch nội dung trang sang ngôn ngữ khác</div>
+    </div>
+
+    <!-- Body -->
+    <div id="tw-body">
+      <div class="tw-lang-row">
+        <div class="tw-lang-box">
+          <span class="tw-lang-label">Ngôn ngữ gốc</span>
+          <select class="tw-lang-select" id="tw-src-lang">
+            <option value="auto">🌐 Tự động nhận diện</option>
+            <option value="vi" selected>🇻🇳 Tiếng Việt</option>
+            <option value="en">🇺🇸 English</option>
+            <option value="zh-CN">🇨🇳 中文 (Giản thể)</option>
+            <option value="zh-TW">🇹🇼 中文 (Phồn thể)</option>
+            <option value="ja">🇯🇵 日本語</option>
+            <option value="ko">🇰🇷 한국어</option>
+            <option value="fr">🇫🇷 Français</option>
+            <option value="de">🇩🇪 Deutsch</option>
+            <option value="es">🇪🇸 Español</option>
+            <option value="it">🇮🇹 Italiano</option>
+            <option value="pt">🇵🇹 Português</option>
+            <option value="ru">🇷🇺 Русский</option>
+            <option value="ar">🇸🇦 العربية</option>
+            <option value="th">🇹🇭 ภาษาไทย</option>
+            <option value="id">🇮🇩 Bahasa Indonesia</option>
+          </select>
+        </div>
+
+        <button id="tw-swap" title="Hoán đổi ngôn ngữ">
+          <svg viewBox="0 0 24 24"><path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg>
+        </button>
+
+        <div class="tw-lang-box">
+          <span class="tw-lang-label">Dịch sang</span>
+          <select class="tw-lang-select" id="tw-dest-lang">
+            <option value="en" selected>🇺🇸 English</option>
+            <option value="vi">🇻🇳 Tiếng Việt</option>
+            <option value="zh-CN">🇨🇳 中文 (Giản thể)</option>
+            <option value="zh-TW">🇹🇼 中文 (Phồn thể)</option>
+            <option value="ja">🇯🇵 日本語</option>
+            <option value="ko">🇰🇷 한국어</option>
+            <option value="fr">🇫🇷 Français</option>
+            <option value="de">🇩🇪 Deutsch</option>
+            <option value="es">🇪🇸 Español</option>
+            <option value="it">🇮🇹 Italiano</option>
+            <option value="pt">🇵🇹 Português</option>
+            <option value="ru">🇷🇺 Русский</option>
+            <option value="ar">🇸🇦 العربية</option>
+            <option value="th">🇹🇭 ภาษาไทย</option>
+            <option value="id">🇮🇩 Bahasa Indonesia</option>
+          </select>
+        </div>
+      </div>
+
+      <button id="tw-translate-btn">
+        <svg viewBox="0 0 24 24"><path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0014.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/></svg>
+        Dịch trang ngay
+      </button>
+
+      <div id="tw-status"></div>
+
+      <button id="tw-restore-btn">
+        <svg viewBox="0 0 24 24"><path d="M13 3a9 9 0 1 0 9 9h-2a7 7 0 1 1-7-7v4l5-5-5-5v4z"/></svg>
+        Khôi phục bản gốc
+      </button>
+    </div>
+
+    <div class="tw-divider"></div>
+
+    <div id="tw-footer">
+      <svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm6.93 6h-2.95a15.65 15.65 0 0 0-1.38-3.56A8.03 8.03 0 0 1 18.92 8zM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96zM4.26 14C4.1 13.36 4 12.69 4 12s.1-1.36.26-2h3.38c-.08.66-.14 1.32-.14 2s.06 1.34.14 2H4.26zm.82 2h2.95c.32 1.25.78 2.45 1.38 3.56A7.987 7.987 0 0 1 5.08 16zm2.95-8H5.08a7.987 7.987 0 0 1 4.33-3.56A15.65 15.65 0 0 0 8.03 8zM12 19.96c-.83-1.2-1.48-2.53-1.91-3.96h3.82c-.43 1.43-1.08 2.76-1.91 3.96zM14.34 14H9.66c-.09-.66-.16-1.32-.16-2s.07-1.35.16-2h4.68c.09.65.16 1.32.16 2s-.07 1.34-.16 2zm.25 5.56c.6-1.11 1.06-2.31 1.38-3.56h2.95a8.03 8.03 0 0 1-4.33 3.56zM16.36 14c.08-.66.14-1.32.14-2s-.06-1.34-.14-2h3.38c.16.64.26 1.31.26 2s-.1 1.36-.26 2h-3.38z"/></svg>
+      Hỗ trợ bởi Google Translate
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  const fab = document.getElementById('tw-fab');
+  const panel = document.getElementById('tw-panel');
+  const translateBtn = document.getElementById('tw-translate-btn');
+  const restoreBtn = document.getElementById('tw-restore-btn');
+  const statusEl = document.getElementById('tw-status');
+  const srcLang = document.getElementById('tw-src-lang');
+  const destLang = document.getElementById('tw-dest-lang');
+  const swapBtn = document.getElementById('tw-swap');
+
+  let isTranslated = false;
+  let originalTexts = []; // { node, original }
+  let isLoading = false;
+
+  // === Toggle panel ===
+  fab.addEventListener('click', () => {
+    const isOpen = panel.classList.contains('open');
+    panel.classList.toggle('open');
+    fab.classList.toggle('active');
+    if (!isOpen) setStatus('info', '🌐 Chọn ngôn ngữ và nhấn Dịch trang ngay');
+  });
+
+  // Close on outside click
+  document.addEventListener('click', (e) => {
+    if (!document.getElementById('tw-root').contains(e.target)) {
+      panel.classList.remove('open');
+      fab.classList.remove('active');
+    }
+  });
+
+  // === Swap languages ===
+  swapBtn.addEventListener('click', () => {
+    const s = srcLang.value === 'auto' ? destLang.value : srcLang.value;
+    const d = srcLang.value === 'auto' ? 'vi' : destLang.value;
+    // Only swap if src is not auto
+    if (srcLang.value !== 'auto') {
+      const tmp = srcLang.value;
+      srcLang.value = destLang.value;
+      destLang.value = tmp;
+    }
+  });
+
+  // === Status helper ===
+  function setStatus(type, msg, spinner = false) {
+    statusEl.className = 'tw-status ' + type;
+    statusEl.innerHTML = spinner
+      ? `<div class="tw-spinner"></div><span>${msg}</span>`
+      : `<span>${msg}</span>`;
+    statusEl.style.display = 'flex';
+  }
+  function hideStatus() { statusEl.style.display = 'none'; }
+
+  // === Get all visible text nodes ===
+  function getTextNodes(root) {
+    const walker = document.createTreeWalker(
+      root,
+      NodeFilter.SHOW_TEXT,
+      {
+        acceptNode(node) {
+          const parent = node.parentElement;
+          if (!parent) return NodeFilter.FILTER_REJECT;
+          const tag = parent.tagName.toUpperCase();
+          // Skip script, style, noscript, tw-root
+          if (['SCRIPT','STYLE','NOSCRIPT','TEXTAREA','INPUT'].includes(tag)) return NodeFilter.FILTER_REJECT;
+          if (parent.closest('#tw-root')) return NodeFilter.FILTER_REJECT;
+          if (node.textContent.trim().length < 2) return NodeFilter.FILTER_REJECT;
+          return NodeFilter.FILTER_ACCEPT;
+        }
+      }
+    );
+    const nodes = [];
+    let n;
+    while ((n = walker.nextNode())) nodes.push(n);
+    return nodes;
+  }
+
+  // === Chunk array ===
+  function chunk(arr, size) {
+    const res = [];
+    for (let i = 0; i < arr.length; i += size) res.push(arr.slice(i, i + size));
+    return res;
+  }
+
+  // === Translate a batch of texts via Google Translate (no key needed) ===
+  async function translateTexts(texts, src, dest) {
+    const joined = texts.join('\n\n||||\n\n');
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${src}&tl=${dest}&dt=t&q=${encodeURIComponent(joined)}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Lỗi kết nối API dịch');
+    const data = await res.json();
+    // Parse result
+    const translated = data[0].map(item => item[0]).join('');
+    return translated.split('\n\n||||\n\n');
+  }
+
+  // === Main translate ===
+  translateBtn.addEventListener('click', async () => {
+    if (isLoading) return;
+
+    const dest = destLang.value;
+    const src = srcLang.value;
+
+    if (src !== 'auto' && src === dest) {
+      setStatus('error', '⚠️ Ngôn ngữ gốc và đích không được giống nhau!');
+      return;
+    }
+
+    // Restore if already translated
+    if (isTranslated) restoreOriginal();
+
+    isLoading = true;
+    translateBtn.disabled = true;
+    setStatus('loading', 'Đang thu thập nội dung...', true);
+
+    try {
+      const textNodes = getTextNodes(document.body);
+      if (textNodes.length === 0) throw new Error('Không tìm thấy nội dung để dịch');
+
+      originalTexts = textNodes.map(n => ({ node: n, original: n.textContent }));
+      const texts = originalTexts.map(t => t.original.trim());
+
+      setStatus('loading', `Đang dịch ${texts.length} đoạn văn...`, true);
+
+      // Batch: 40 texts per request
+      const batches = chunk(texts, 40);
+      const results = [];
+
+      for (let i = 0; i < batches.length; i++) {
+        setStatus('loading', `Dịch batch ${i+1}/${batches.length}...`, true);
+        const translated = await translateTexts(batches[i], src, dest);
+        results.push(...translated);
+        if (i < batches.length - 1) await new Promise(r => setTimeout(r, 300));
+      }
+
+      // Apply translations
+      originalTexts.forEach((item, idx) => {
+        if (results[idx] !== undefined) {
+          item.node.textContent = results[idx];
+        }
+      });
+
+      isTranslated = true;
+      const destName = destLang.options[destLang.selectedIndex].text.replace(/^[^\s]+\s/, '');
+      setStatus('success', `✅ Đã dịch sang ${destName} thành công!`);
+      restoreBtn.style.display = 'flex';
+
+    } catch (err) {
+      console.error('Translate error:', err);
+      setStatus('error', `❌ ${err.message || 'Lỗi không xác định. Vui lòng thử lại.'}`);
+      restoreOriginal();
+    } finally {
+      isLoading = false;
+      translateBtn.disabled = false;
+    }
+  });
+
+  // === Restore ===
+  function restoreOriginal() {
+    originalTexts.forEach(({ node, original }) => {
+      try { node.textContent = original; } catch(e) {}
+    });
+    originalTexts = [];
+    isTranslated = false;
+    restoreBtn.style.display = 'none';
+  }
+
+  restoreBtn.addEventListener('click', () => {
+    restoreOriginal();
+    setStatus('info', '🔄 Đã khôi phục nội dung gốc');
+  });
+
+})();
+</script>
+<!-- ========================================== --><!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IP Address — Địa Chỉ Internet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,300;1,8..60,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1209;
+    --paper: #f5f0e8;
+    --paper-dark: #ede7d6;
+    --accent: #c0392b;
+    --accent2: #2c3e7a;
+    --gold: #b8902a;
+    --muted: #7a6e5f;
+    --code-bg: #1e1e2e;
+    --code-text: #cdd6f4;
+    --divider: #c9bfa8;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 18px;
+    line-height: 1.8;
+    overflow-x: hidden;
+  }
+
+  /* Noise texture overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.5;
+  }
+
+  /* ───────── HEADER ───────── */
+  header {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 60px;
+    border-bottom: 1px solid #3a3020;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: #9a8f7a;
+  }
+
+  .header-title-area {
+    text-align: center;
+    padding: 56px 60px 40px;
+    position: relative;
+  }
+
+  .header-label {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 4px 14px;
+    margin-bottom: 28px;
+  }
+
+  h1.headline {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: clamp(3.5rem, 8vw, 7rem);
+    font-weight: 900;
+    line-height: 0.95;
+    letter-spacing: -0.02em;
+    color: var(--paper);
+    margin-bottom: 8px;
+  }
+
+  h1.headline em {
+    color: var(--gold);
+    font-style: italic;
+  }
+
+  .header-sub {
+    font-size: 1rem;
+    color: #9a8f7a;
+    font-style: italic;
+    margin-top: 18px;
+    letter-spacing: 0.02em;
+  }
+
+  .header-meta {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    padding: 20px 60px 36px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: #6a6050;
+    border-top: 1px solid #2a2015;
+  }
+
+  /* Animated IP rain background */
+  .ip-rain {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .ip-rain span {
+    position: absolute;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: rgba(180,160,100,0.07);
+    animation: rain linear infinite;
+    white-space: nowrap;
+  }
+
+  @keyframes rain {
+    from { transform: translateY(-100%); }
+    to { transform: translateY(110vh); }
+  }
+
+  /* ───────── NAV / TOC ───────── */
+  .toc-bar {
+    background: var(--paper-dark);
+    border-bottom: 2px solid var(--ink);
+    border-top: 2px solid var(--ink);
+    padding: 0 60px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+  }
+
+  .toc-bar a {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ink);
+    text-decoration: none;
+    padding: 14px 18px;
+    border-right: 1px solid var(--divider);
+    white-space: nowrap;
+    transition: background 0.2s, color 0.2s;
+  }
+
+  .toc-bar a:hover { background: var(--ink); color: var(--paper); }
+  .toc-bar a:first-child { border-left: 1px solid var(--divider); }
+
+  /* ───────── LAYOUT ───────── */
+  .container {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  .wide-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 40px;
+  }
+
+  /* ───────── SECTIONS ───────── */
+  section {
+    padding: 72px 0 48px;
+    border-bottom: 1px solid var(--divider);
+  }
+
+  section:last-of-type { border-bottom: none; }
+
+  .section-number {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    color: var(--accent);
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 10px;
+  }
+
+  h2 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: clamp(2rem, 4vw, 2.8rem);
+    font-weight: 700;
+    line-height: 1.15;
+    margin-bottom: 32px;
+    color: var(--ink);
+  }
+
+  h3 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 40px 0 14px;
+    color: var(--accent2);
+  }
+
+  p { margin-bottom: 1.4em; }
+
+  /* Drop cap */
+  .dropcap::first-letter {
+    float: left;
+    font-family: 'Playfair Display', serif;
+    font-size: 5.4em;
+    font-weight: 900;
+    line-height: 0.75;
+    margin: 4px 14px -4px 0;
+    color: var(--accent);
+  }
+
+  /* Pull quote */
+  blockquote.pull {
+    border-left: 4px solid var(--accent);
+    margin: 40px 0 40px 0;
+    padding: 20px 32px;
+    background: var(--paper-dark);
+    font-family: 'Playfair Display', serif;
+    font-size: 1.35rem;
+    font-style: italic;
+    color: var(--ink);
+    line-height: 1.5;
+    position: relative;
+  }
+
+  blockquote.pull::before {
+    content: '\201C';
+    font-size: 5rem;
+    color: var(--gold);
+    position: absolute;
+    top: -10px;
+    left: 18px;
+    line-height: 1;
+    font-family: 'Playfair Display', serif;
+    opacity: 0.5;
+  }
+
+  /* Info box */
+  .info-box {
+    background: var(--accent2);
+    color: #dde4f5;
+    border-radius: 2px;
+    padding: 28px 36px;
+    margin: 36px 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .info-box::before {
+    content: 'INFO';
+    position: absolute;
+    top: 14px; right: 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.3em;
+    color: rgba(255,255,255,0.25);
+  }
+
+  .info-box h4 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    margin-bottom: 10px;
+    color: #fff;
+  }
+
+  .info-box p { margin-bottom: 0.6em; font-size: 0.92rem; }
+
+  /* Code block */
+  .code-block {
+    background: var(--code-bg);
+    color: var(--code-text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+    line-height: 1.7;
+    border-radius: 4px;
+    padding: 24px 28px;
+    margin: 28px 0;
+    overflow-x: auto;
+    position: relative;
+  }
+
+  .code-block .label {
+    position: absolute;
+    top: 10px; right: 16px;
+    font-size: 9px;
+    letter-spacing: 0.25em;
+    color: #6c7086;
+    text-transform: uppercase;
+  }
+
+  .code-block .kw { color: #cba6f7; }
+  .code-block .str { color: #a6e3a1; }
+  .code-block .num { color: #fab387; }
+  .code-block .cm { color: #6c7086; font-style: italic; }
+  .code-block .op { color: #89dceb; }
+
+  /* Tables */
+  .styled-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 32px 0;
+    font-size: 0.9rem;
+  }
+
+  .styled-table thead tr {
+    background: var(--ink);
+    color: var(--paper);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .styled-table th, .styled-table td {
+    padding: 12px 18px;
+    text-align: left;
+    border-bottom: 1px solid var(--divider);
+  }
+
+  .styled-table tbody tr:nth-child(even) { background: var(--paper-dark); }
+  .styled-table tbody tr:hover { background: #e8e0cc; }
+
+  /* Comparison grid */
+  .compare-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px;
+    margin: 32px 0;
+    background: var(--divider);
+    border: 2px solid var(--ink);
+  }
+
+  .compare-card {
+    background: var(--paper);
+    padding: 28px 28px 24px;
+  }
+
+  .compare-card.accent-left { background: var(--ink); color: var(--paper); }
+  .compare-card.accent-left h4 { color: var(--gold); }
+
+  .compare-card h4 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 14px;
+  }
+
+  .compare-card ul {
+    list-style: none;
+    font-size: 0.9rem;
+  }
+
+  .compare-card ul li {
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(0,0,0,0.07);
+    padding-left: 18px;
+    position: relative;
+  }
+
+  .compare-card ul li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+    font-size: 0.8em;
+  }
+
+  .accent-left ul li { border-color: rgba(255,255,255,0.1); }
+  .accent-left ul li::before { color: var(--gold); }
+
+  /* Timeline */
+  .timeline {
+    position: relative;
+    margin: 40px 0;
+    padding-left: 32px;
+  }
+
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 0; bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, var(--accent), var(--accent2));
+  }
+
+  .timeline-item {
+    position: relative;
+    margin-bottom: 36px;
+  }
+
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -28px;
+    top: 7px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 2px solid var(--paper);
+    box-shadow: 0 0 0 2px var(--accent);
+  }
+
+  .timeline-year {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .timeline-item h4 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: var(--ink);
+  }
+
+  .timeline-item p { font-size: 0.9rem; margin: 0; color: var(--muted); }
+
+  /* IP anatomy diagram */
+  .ip-anatomy {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 36px;
+    margin: 36px 0;
+    border-radius: 4px;
+    text-align: center;
+  }
+
+  .ip-anatomy .ip-display {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: clamp(1.4rem, 4vw, 2.4rem);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    margin-bottom: 20px;
+    color: var(--gold);
+  }
+
+  .ip-anatomy .ip-display .oct { display: inline-block; }
+  .ip-anatomy .ip-display .dot { color: var(--accent); }
+
+  .ip-segments {
+    display: flex;
+    justify-content: center;
+    gap: 0;
+    margin-top: 20px;
+  }
+
+  .seg {
+    flex: 1;
+    max-width: 90px;
+    text-align: center;
+    padding: 10px 6px;
+    border-top: 2px solid;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+  }
+
+  .seg:nth-child(1) { border-color: #cba6f7; }
+  .seg:nth-child(2) { border-color: #89b4fa; }
+  .seg:nth-child(3) { border-color: #a6e3a1; }
+  .seg:nth-child(4) { border-color: #fab387; }
+  .seg .seg-val { font-size: 1.2rem; font-weight: 600; color: #cdd6f4; display: block; margin-bottom: 4px; }
+  .seg .seg-bin { color: #6c7086; font-size: 0.6rem; display: block; margin-bottom: 4px; }
+  .seg .seg-label { color: #9399b2; font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.1em; }
+
+  /* Class indicator */
+  .class-badge {
+    display: inline-block;
+    background: var(--accent);
+    color: #fff;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    padding: 3px 10px;
+    border-radius: 2px;
+    text-transform: uppercase;
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+
+  /* Subnet visual */
+  .subnet-visual {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 12px;
+    margin: 28px 0;
+  }
+
+  .subnet-box {
+    background: var(--paper-dark);
+    border: 1px solid var(--divider);
+    border-top: 3px solid var(--accent2);
+    padding: 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    text-align: center;
+  }
+
+  .subnet-box .ip { color: var(--accent2); font-weight: 600; display: block; margin-bottom: 4px; }
+  .subnet-box .desc { color: var(--muted); font-size: 0.65rem; }
+
+  /* Security section */
+  .threat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 28px 0;
+  }
+
+  .threat-card {
+    border: 1px solid var(--divider);
+    border-left: 4px solid var(--accent);
+    padding: 20px 22px;
+    background: var(--paper-dark);
+  }
+
+  .threat-card h5 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+
+  .threat-card p { font-size: 0.88rem; margin: 0; }
+
+  /* Footer */
+  footer {
+    background: var(--ink);
+    color: #6a6050;
+    padding: 40px 60px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 3px solid var(--accent);
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  footer span { color: var(--gold); }
+
+  /* Progress bar */
+  #progress-bar {
+    position: fixed;
+    top: 0; left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--gold));
+    width: 0%;
+    z-index: 9998;
+    transition: width 0.1s;
+  }
+
+  /* Animations */
+  .reveal {
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+
+  .reveal.visible {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* Responsive */
+  @media (max-width: 700px) {
+    .header-top, .header-meta { padding: 12px 20px; }
+    .header-title-area { padding: 40px 20px 28px; }
+    .toc-bar { padding: 0 10px; }
+    .container { padding: 0 20px; }
+    .wide-container { padding: 0 20px; }
+    .compare-grid { grid-template-columns: 1fr; }
+    .threat-grid { grid-template-columns: 1fr; }
+    footer { padding: 28px 20px; flex-direction: column; text-align: center; }
+    .ip-segments { flex-wrap: wrap; }
+  }
+
+  /* Highlight note */
+  mark {
+    background: #f1e5a1;
+    color: var(--ink);
+    padding: 0 3px;
+    border-radius: 2px;
+  }
+
+  strong { font-weight: 600; }
+  em { font-style: italic; }
+
+  a.inline-link {
+    color: var(--accent2);
+    text-decoration: none;
+    border-bottom: 1px solid var(--accent2);
+    transition: color 0.2s;
+  }
+
+  a.inline-link:hover { color: var(--accent); border-color: var(--accent); }
+</style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+
+<!-- ═══════════════ HEADER ═══════════════ -->
+<header>
+  <div class="ip-rain" id="ipRain"></div>
+
+  <div class="header-top">
+    <span>CÔNG NGHỆ MẠNG / NETWORK FUNDAMENTALS</span>
+    <span>VOL. I — IP ADDRESS IN DEPTH</span>
+    <span id="live-date">26.03.2026</span>
+  </div>
+
+  <div class="header-title-area">
+    <div class="header-label">Bài Báo Chuyên Sâu</div>
+    <h1 class="headline"><em>IP</em><br>ADDRESS</h1>
+    <p class="header-sub">Địa chỉ định danh mọi thiết bị trên mạng Internet toàn cầu</p>
+  </div>
+
+  <div class="header-meta">
+    <span>ĐỌC: ~15 phút</span>
+    <span>CHUYÊN MỤC: Mạng Máy Tính</span>
+    <span>CẬP NHẬT: 2026</span>
+    <span>PHIÊN BẢN: IPv4 &amp; IPv6</span>
+  </div>
+</header>
+
+<!-- ═══════════════ TOC ═══════════════ -->
+<nav class="toc-bar" aria-label="Mục lục">
+  <a href="#intro">Giới Thiệu</a>
+  <a href="#meaning">Ý Nghĩa</a>
+  <a href="#history">Lịch Sử</a>
+  <a href="#types">Phân Loại</a>
+  <a href="#comparison">So Sánh</a>
+  <a href="#subnet">Subnet</a>
+  <a href="#dns">DNS</a>
+  <a href="#security">Bảo Mật</a>
+  <a href="#future">Tương Lai</a>
+  <a href="#apps">Ứng Dụng</a>
+</nav>
+
+<!-- ═══════════════ INTRO ═══════════════ -->
+<section id="intro">
+  <div class="container">
+    <span class="section-number">§ 01 — Mở Đầu</span>
+    <h2>Địa Chỉ Của Thế Giới Số</h2>
+
+    <p class="dropcap">Hãy tưởng tượng bạn muốn gửi một lá thư đến người bạn ở thành phố khác. Lá thư đó cần có địa chỉ nhà người nhận, tên đường, số nhà — để bưu tá biết chính xác nơi cần giao. Trong thế giới Internet, <strong>địa chỉ IP (Internet Protocol Address)</strong> đóng vai trò y hệt như vậy: một con số định danh duy nhất giúp các thiết bị tìm thấy và giao tiếp với nhau trên mạng toàn cầu.</p>
+
+    <p>Từ chiếc điện thoại trong túi bạn, màn hình máy tính trước mặt, đến những chiếc tủ lạnh thông minh hay camera an ninh góc phố — mọi thiết bị kết nối Internet đều mang một địa chỉ IP. Đây là nền tảng kỹ thuật tưởng đơn giản nhưng ẩn chứa sự tinh tế sâu xa mà ít người thực sự hiểu rõ.</p>
+
+    <blockquote class="pull">
+      Không có địa chỉ IP, Internet không thể tồn tại — đây là ngôn ngữ định danh của kỷ nguyên số.
+    </blockquote>
+
+    <div class="ip-anatomy">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;letter-spacing:0.2em;color:#6c7086;margin-bottom:16px;text-transform:uppercase;">Cấu Trúc Địa Chỉ IPv4 Điển Hình</div>
+      <div class="ip-display">
+        <span class="oct" style="color:#cba6f7">192</span><span class="dot">.</span><span class="oct" style="color:#89b4fa">168</span><span class="dot">.</span><span class="oct" style="color:#a6e3a1">1</span><span class="dot">.</span><span class="oct" style="color:#fab387">254</span>
+      </div>
+      <div class="ip-segments">
+        <div class="seg">
+          <span class="seg-val" style="color:#cba6f7">192</span>
+          <span class="seg-bin">11000000</span>
+          <span class="seg-label">Octet 1<br>Network</span>
+        </div>
+        <div class="seg">
+          <span class="seg-val" style="color:#89b4fa">168</span>
+          <span class="seg-bin">10101000</span>
+          <span class="seg-label">Octet 2<br>Network</span>
+        </div>
+        <div class="seg">
+          <span class="seg-val" style="color:#a6e3a1">1</span>
+          <span class="seg-bin">00000001</span>
+          <span class="seg-label">Octet 3<br>Subnet</span>
+        </div>
+        <div class="seg">
+          <span class="seg-val" style="color:#fab387">254</span>
+          <span class="seg-bin">11111110</span>
+          <span class="seg-label">Octet 4<br>Host</span>
+        </div>
+      </div>
+      <div style="margin-top:20px;font-size:0.75rem;color:#6c7086;font-family:'JetBrains Mono',monospace;">
+        32 bits tổng · 4 octet · Mỗi octet: 8 bits (0–255)
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ Ý NGHĨA ═══════════════ -->
+<section id="meaning">
+  <div class="container">
+    <span class="section-number">§ 02 — Ý Nghĩa</span>
+    <h2>IP Address Có Nghĩa Gì?</h2>
+
+    <p><strong>IP</strong> là viết tắt của <em>Internet Protocol</em> — giao thức Internet. Địa chỉ IP là một chuỗi số nhị phân được gán cho từng thiết bị khi kết nối vào mạng, phục vụ hai mục đích cốt lõi:</p>
+
+    <div class="info-box">
+      <h4>🎯 Hai chức năng nền tảng của IP Address</h4>
+      <p><strong>1. Định danh (Identification):</strong> Xác định thiết bị là ai — giống như số CMND của mỗi công dân.</p>
+      <p><strong>2. Định vị (Location Addressing):</strong> Xác định thiết bị ở đâu trong cấu trúc mạng — giống như địa chỉ nhà trong hệ thống bưu chính.</p>
+    </div>
+
+    <h3>Địa chỉ IP hoạt động ra sao?</h3>
+    <p>Khi bạn truy cập trang web <mark>google.com</mark>, trình duyệt của bạn gửi yêu cầu kèm địa chỉ IP nguồn (của máy bạn) đến máy chủ Google. Máy chủ nhận được yêu cầu, xử lý, rồi gửi dữ liệu trở lại đúng địa chỉ IP của bạn. Toàn bộ quá trình này xảy ra trong mili-giây, qua hàng chục router trung gian — nhờ địa chỉ IP mà gói tin không bị lạc đường.</p>
+
+    <div class="code-block">
+      <span class="label">PACKET FLOW</span>
+<span class="cm"># Hành trình của một gói tin từ máy bạn đến Google</span>
+
+<span class="kw">Thiết bị của bạn</span>   → IP nguồn: <span class="num">192.168.1.5</span>
+                   → IP đích:   <span class="num">142.250.185.46</span>  <span class="cm">(google.com)</span>
+                   → Port:      <span class="num">443</span>             <span class="cm">(HTTPS)</span>
+
+<span class="kw">Router ISP</span>         → Đọc IP đích → Tra bảng định tuyến
+<span class="kw">Internet backbone</span>  → Chuyển tiếp qua hàng chục hop
+<span class="kw">Google datacenter</span>  → Nhận, xử lý, phản hồi về IP: <span class="num">192.168.1.5</span>
+    </div>
+
+    <h3>Các thành phần của địa chỉ IP</h3>
+    <p>Một địa chỉ IPv4 gồm hai phần tách biệt bởi <strong>Subnet Mask</strong>:</p>
+    <ul style="list-style:none;padding:0;">
+      <li style="padding:10px 0 10px 24px;border-bottom:1px solid var(--divider);position:relative;"><span style="position:absolute;left:0;color:var(--accent);font-family:'JetBrains Mono',monospace">▶</span> <strong>Network ID:</strong> Xác định mạng mà thiết bị thuộc về (giống như tên thành phố/quận)</li>
+      <li style="padding:10px 0 10px 24px;border-bottom:1px solid var(--divider);position:relative;"><span style="position:absolute;left:0;color:var(--accent);font-family:'JetBrains Mono',monospace">▶</span> <strong>Host ID:</strong> Xác định thiết bị cụ thể trong mạng đó (giống như số nhà trên đường)</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ═══════════════ LỊCH SỬ ═══════════════ -->
+<section id="history">
+  <div class="container">
+    <span class="section-number">§ 03 — Lịch Sử</span>
+    <h2>Hành Trình Hình Thành</h2>
+
+    <p>Địa chỉ IP không ra đời trong một đêm. Nó là kết quả của hàng thập kỷ nghiên cứu, thử nghiệm và cải tiến bởi những bộ óc vĩ đại nhất thế kỷ 20.</p>
+
+    <div class="timeline">
+      <div class="timeline-item reveal">
+        <span class="timeline-year">1969</span>
+        <h4>ARPANET — Tiền Thân của Internet</h4>
+        <p>Bộ Quốc Phòng Mỹ khởi động dự án ARPANET, kết nối 4 trường đại học đầu tiên. Gói tin đầu tiên được gửi từ UCLA đến SRI, nhưng hệ thống gặp sự cố ngay sau chữ "LO" trong "LOGIN".</p>
+      </div>
+
+      <div class="timeline-item reveal">
+        <span class="timeline-year">1974</span>
+        <h4>Vint Cerf &amp; Bob Kahn — Cha Đẻ TCP/IP</h4>
+        <p>Vinton Cerf và Robert Kahn công bố bài báo nền tảng "A Protocol for Packet Network Intercommunication", đặt nền móng cho giao thức TCP/IP — trong đó có khái niệm địa chỉ IP hiện đại.</p>
+      </div>
+
+      <div class="timeline-item reveal">
+        <span class="timeline-year">1981</span>
+        <h4>RFC 791 — IPv4 Ra Đời Chính Thức</h4>
+        <p>IETF (Internet Engineering Task Force) ban hành RFC 791, chính thức hóa IPv4 với không gian địa chỉ 32-bit, cho phép tới 4,294,967,296 địa chỉ. Không ai ngờ rằng con số này sẽ cạn kiệt chỉ trong 30 năm.</p>
+      </div>
+
+      <div class="timeline-item reveal">
+        <span class="timeline-year">1983</span>
+        <h4>ARPANET Chuyển Sang TCP/IP</h4>
+        <p>Ngày 1/1/1983 — còn gọi là "Flag Day" — toàn bộ ARPANET chính thức chuyển sang TCP/IP. Đây là ngày khai sinh thực sự của Internet hiện đại.</p>
+      </div>
+
+      <div class="timeline-item reveal">
+        <span class="timeline-year">1992</span>
+        <h4>Cảnh Báo Cạn Kiệt IPv4</h4>
+        <p>Với sự bùng nổ của World Wide Web, giới chuyên gia cảnh báo không gian địa chỉ IPv4 sẽ sớm cạn kiệt. IETF bắt đầu nghiên cứu thế hệ IP tiếp theo.</p>
+      </div>
+
+      <div class="timeline-item reveal">
+        <span class="timeline-year">1998</span>
+        <h4>RFC 2460 — IPv6 Ra Đời</h4>
+        <p>IPv6 được chuẩn hóa với không gian địa chỉ 128-bit, cung cấp 340 undecillion địa chỉ — con số khổng lồ đủ gán cho từng hạt cát trên Trái Đất vài nghìn lần.</p>
+      </div>
+
+      <div class="timeline-item reveal">
+        <span class="timeline-year">2011</span>
+        <h4>IANA Phân Phối IPv4 Cuối Cùng</h4>
+        <p>Ngày 3/2/2011, IANA (Internet Assigned Numbers Authority) phân bổ khối địa chỉ IPv4 cuối cùng cho các RIR (Regional Internet Registries). IPv4 chính thức cạn kiệt ở cấp toàn cầu.</p>
+      </div>
+
+      <div class="timeline-item reveal">
+        <span class="timeline-year">2012–Nay</span>
+        <h4>Kỷ Nguyên Chuyển Đổi IPv6</h4>
+        <p>Thế giới đang trong giai đoạn chuyển đổi song song IPv4/IPv6. Theo thống kê Google năm 2024, hơn 45% người dùng truy cập qua IPv6 — con số tăng đều mỗi năm.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ PHÂN LOẠI ═══════════════ -->
+<section id="types">
+  <div class="container">
+    <span class="section-number">§ 04 — Phân Loại</span>
+    <h2>Các Loại Địa Chỉ IP</h2>
+
+    <h3>Theo Phiên Bản Giao Thức</h3>
+
+    <div class="compare-grid">
+      <div class="compare-card accent-left">
+        <h4>IPv4</h4>
+        <ul>
+          <li>32-bit · Ví dụ: 192.168.1.1</li>
+          <li>~4.3 tỷ địa chỉ</li>
+          <li>Ký hiệu thập phân (4 octet)</li>
+          <li>Không có bảo mật tích hợp</li>
+          <li>Header 20–60 bytes</li>
+          <li>Hỗ trợ broadcast</li>
+          <li>Hiện vẫn chiếm ~55% lưu lượng</li>
+        </ul>
+      </div>
+      <div class="compare-card">
+        <h4>IPv6</h4>
+        <ul>
+          <li>128-bit · Ví dụ: 2001:db8::1</li>
+          <li>340 undecillion địa chỉ</li>
+          <li>Ký hiệu thập lục phân (8 nhóm)</li>
+          <li>IPSec tích hợp sẵn</li>
+          <li>Header cố định 40 bytes</li>
+          <li>Dùng multicast thay broadcast</li>
+          <li>Đang tăng trưởng nhanh ~45%</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>Theo Phạm Vi Sử Dụng</h3>
+    <table class="styled-table">
+      <thead>
+        <tr>
+          <th>Loại</th>
+          <th>Phạm Vi</th>
+          <th>Dải Địa Chỉ (IPv4)</th>
+          <th>Sử Dụng</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Public IP</strong></td>
+          <td>Toàn cầu</td>
+          <td>Ngoài các dải Private</td>
+          <td>Server, website, router ISP</td>
+        </tr>
+        <tr>
+          <td><strong>Private IP</strong></td>
+          <td>Mạng nội bộ</td>
+          <td>10.x.x.x / 172.16–31.x.x / 192.168.x.x</td>
+          <td>LAN, văn phòng, gia đình</td>
+        </tr>
+        <tr>
+          <td><strong>Loopback</strong></td>
+          <td>Chỉ thiết bị cục bộ</td>
+          <td>127.0.0.1</td>
+          <td>Testing, localhost</td>
+        </tr>
+        <tr>
+          <td><strong>Link-Local</strong></td>
+          <td>Một đoạn mạng</td>
+          <td>169.254.x.x</td>
+          <td>APIPA khi không có DHCP</td>
+        </tr>
+        <tr>
+          <td><strong>Multicast</strong></td>
+          <td>Nhóm thiết bị</td>
+          <td>224.0.0.0 – 239.255.255.255</td>
+          <td>Streaming, routing protocol</td>
+        </tr>
+        <tr>
+          <td><strong>Broadcast</strong></td>
+          <td>Toàn mạng</td>
+          <td>255.255.255.255</td>
+          <td>Gửi tới tất cả trong mạng</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Theo Tính Ổn Định</h3>
+    <p><span class="class-badge">Static</span><strong>Địa chỉ tĩnh (Static IP):</strong> Được cấu hình thủ công, không đổi theo thời gian. Dùng cho server, máy in mạng, camera IP. Chi phí cao hơn nhưng ổn định.</p>
+    <p><span class="class-badge" style="background:var(--accent2)">Dynamic</span><strong>Địa chỉ động (Dynamic IP):</strong> Được cấp tự động bởi DHCP server, thay đổi mỗi lần kết nối. Chiếm đại đa số người dùng phổ thông.</p>
+  </div>
+</section>
+
+<!-- ═══════════════ SO SÁNH IPv4/IPv6 ═══════════════ -->
+<section id="comparison">
+  <div class="container">
+    <span class="section-number">§ 05 — Phân Biệt</span>
+    <h2>IPv4 vs IPv6 — Cách Phân Biệt Chi Tiết</h2>
+
+    <p>Đây là hai phiên bản song hành trong thế giới mạng hiện đại. Hiểu rõ sự khác biệt giúp bạn cấu hình, debug và bảo mật hệ thống hiệu quả hơn.</p>
+
+    <div class="code-block">
+      <span class="label">FORMAT EXAMPLES</span>
+<span class="cm"># IPv4 — Dotted Decimal Notation</span>
+<span class="num">203.162.0.1</span>       <span class="cm">→ IP của VDC (FPT's DNS)</span>
+<span class="num">8.8.8.8</span>           <span class="cm">→ Google Public DNS</span>
+<span class="num">192.168.1.100</span>     <span class="cm">→ Private LAN address</span>
+
+<span class="cm"># IPv6 — Colon-separated Hexadecimal</span>
+<span class="str">2001:0db8:85a3:0000:0000:8a2e:0370:7334</span>  <span class="cm">→ Dạng đầy đủ</span>
+<span class="str">2001:db8:85a3::8a2e:370:7334</span>             <span class="cm">→ Dạng rút gọn</span>
+<span class="str">::1</span>                                       <span class="cm">→ Loopback (≡ 127.0.0.1)</span>
+<span class="str">fe80::1</span>                                   <span class="cm">→ Link-local address</span>
+    </div>
+
+    <h3>Quy Tắc Rút Gọn IPv6</h3>
+    <div class="info-box">
+      <h4>📐 Hai quy tắc viết tắt IPv6</h4>
+      <p><strong>Quy tắc 1 — Bỏ số 0 đầu:</strong> Nhóm <code style="background:rgba(255,255,255,0.1);padding:1px 5px">0042</code> → <code style="background:rgba(255,255,255,0.1);padding:1px 5px">42</code></p>
+      <p><strong>Quy tắc 2 — Thay chuỗi 0 liên tiếp bằng "::":</strong> Chỉ dùng một lần duy nhất trong địa chỉ.</p>
+      <p>Ví dụ: <code style="background:rgba(255,255,255,0.1);padding:1px 5px">2001:0000:0000:0000:0000:0000:0000:0001</code> → <code style="background:rgba(255,255,255,0.1);padding:1px 5px">2001::1</code></p>
+    </div>
+
+    <table class="styled-table">
+      <thead>
+        <tr>
+          <th>Tiêu Chí</th>
+          <th>IPv4</th>
+          <th>IPv6</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Độ dài địa chỉ</td><td>32 bit</td><td>128 bit</td></tr>
+        <tr><td>Số lượng địa chỉ</td><td>~4.3 tỷ</td><td>3.4 × 10³⁸</td></tr>
+        <tr><td>Định dạng</td><td>Thập phân, dấu chấm</td><td>Thập lục phân, dấu hai chấm</td></tr>
+        <tr><td>Cấu hình địa chỉ</td><td>Thủ công hoặc DHCP</td><td>Auto-config (SLAAC) hoặc DHCPv6</td></tr>
+        <tr><td>Kiểm tra tổng Header</td><td>Có</td><td>Không (tăng tốc độ)</td></tr>
+        <tr><td>NAT</td><td>Bắt buộc (địa chỉ thiếu)</td><td>Không cần thiết</td></tr>
+        <tr><td>Bảo mật</td><td>Tùy chọn (IPSec)</td><td>Tích hợp sẵn (IPSec)</td></tr>
+        <tr><td>QoS</td><td>DSCP</td><td>Flow Label tích hợp</td></tr>
+        <tr><td>Fragmentation</td><td>Router và host</td><td>Chỉ host</td></tr>
+        <tr><td>Multicast</td><td>Tùy chọn</td><td>Bắt buộc hỗ trợ</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════════ SUBNET ═══════════════ -->
+<section id="subnet">
+  <div class="container">
+    <span class="section-number">§ 06 — Subnet &amp; CIDR</span>
+    <h2>Subnet Mask và CIDR Notation</h2>
+
+    <p>Subnet Mask là mặt nạ nhị phân giúp xác định phần nào của địa chỉ IP thuộc về <em>mạng</em> và phần nào là <em>host</em>. CIDR (Classless Inter-Domain Routing) là cách biểu diễn ngắn gọn hơn.</p>
+
+    <div class="code-block">
+      <span class="label">SUBNET EXAMPLE</span>
+<span class="cm"># Địa chỉ mạng 192.168.1.0/24</span>
+Địa chỉ IP:   <span class="num">192.168.1  .100</span>
+Subnet Mask:  <span class="num">255.255.255.0</span>   <span class="cm">= /24 (24 bit network)</span>
+
+Network ID:   <span class="kw">192.168.1.0</span>     <span class="cm">← Địa chỉ mạng</span>
+Broadcast:    <span class="kw">192.168.1.255</span>   <span class="cm">← Địa chỉ broadcast</span>
+Host range:   <span class="str">192.168.1.1</span> → <span class="str">192.168.1.254</span>   <span class="cm">(254 hosts)</span>
+
+<span class="cm"># Phân chia thành 4 subnet /26</span>
+Subnet 1:     <span class="num">192.168.1.0/26</span>    <span class="cm">(0–63)</span>
+Subnet 2:     <span class="num">192.168.1.64/26</span>   <span class="cm">(64–127)</span>
+Subnet 3:     <span class="num">192.168.1.128/26</span>  <span class="cm">(128–191)</span>
+Subnet 4:     <span class="num">192.168.1.192/26</span>  <span class="cm">(192–255)</span>
+    </div>
+
+    <h3>Các CIDR Phổ Biến</h3>
+    <div class="subnet-visual">
+      <div class="subnet-box"><span class="ip">/8</span><span class="desc">16.7M hosts<br>Class A</span></div>
+      <div class="subnet-box"><span class="ip">/16</span><span class="desc">65,534 hosts<br>Class B</span></div>
+      <div class="subnet-box"><span class="ip">/24</span><span class="desc">254 hosts<br>Class C phổ biến</span></div>
+      <div class="subnet-box"><span class="ip">/25</span><span class="desc">126 hosts<br>Bán /24</span></div>
+      <div class="subnet-box"><span class="ip">/26</span><span class="desc">62 hosts<br>Phòng ban nhỏ</span></div>
+      <div class="subnet-box"><span class="ip">/27</span><span class="desc">30 hosts<br>VLAN nhỏ</span></div>
+      <div class="subnet-box"><span class="ip">/30</span><span class="desc">2 hosts<br>WAN link</span></div>
+      <div class="subnet-box"><span class="ip">/32</span><span class="desc">1 host<br>Host route</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ DNS ═══════════════ -->
+<section id="dns">
+  <div class="container">
+    <span class="section-number">§ 07 — DNS &amp; NAT</span>
+    <h2>IP Address, DNS và NAT</h2>
+
+    <h3>DNS — Hệ Thống Biên Dịch Địa Chỉ</h3>
+    <p>Con người nhớ tên miền dễ hơn dãy số. <strong>DNS (Domain Name System)</strong> đóng vai trò như cuốn danh bạ khổng lồ: dịch tên miền dễ đọc thành địa chỉ IP mà máy tính hiểu.</p>
+
+    <div class="code-block">
+      <span class="label">DNS RESOLUTION</span>
+<span class="cm"># Bạn gõ: google.com → Điều gì xảy ra?</span>
+
+<span class="op">Bước 1</span>: Kiểm tra cache trình duyệt
+<span class="op">Bước 2</span>: Truy vấn DNS Resolver (thường là router)
+<span class="op">Bước 3</span>: Resolver hỏi Root DNS Server (<span class="str">"."</span>)
+<span class="op">Bước 4</span>: Root trả về TLD server (<span class="str">".com"</span>)
+<span class="op">Bước 5</span>: TLD trả về Authoritative NS của google
+<span class="op">Bước 6</span>: Authoritative NS trả: <span class="num">142.250.185.46</span>
+<span class="op">Kết quả</span>: Trình duyệt kết nối tới <span class="num">142.250.185.46</span>
+
+<span class="cm"># Toàn bộ quá trình: < 50ms</span>
+    </div>
+
+    <h3>NAT — Kỹ Thuật Tiết Kiệm IPv4</h3>
+    <p><strong>NAT (Network Address Translation)</strong> ra đời như một "giải pháp tạm thời" cho sự cạn kiệt IPv4 — và đã trở thành tiêu chuẩn phổ biến đến tận ngày nay. NAT cho phép nhiều thiết bị trong mạng LAN chia sẻ chung một địa chỉ IP Public duy nhất.</p>
+
+    <div class="info-box">
+      <h4>🔄 NAT hoạt động thế nào?</h4>
+      <p>Máy bạn (192.168.1.5) gửi request → Router thay địa chỉ nguồn thành IP Public (203.x.x.x:PORT_RANDOM) → Server nhận và trả về IP Public → Router đối chiếu bảng NAT → Chuyển về đúng 192.168.1.5.</p>
+      <p>Đây là lý do hàng triệu thiết bị trong nhà bạn dùng chung một IP Public mà vẫn hoạt động bình thường.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ BẢO MẬT ═══════════════ -->
+<section id="security">
+  <div class="container">
+    <span class="section-number">§ 08 — Bảo Mật</span>
+    <h2>IP Address &amp; Các Vấn Đề Bảo Mật</h2>
+
+    <p>Địa chỉ IP không chỉ là công cụ kết nối — nó còn là bề mặt tấn công trong thế giới an ninh mạng. Hiểu các mối đe dọa liên quan đến IP là bước đầu tiên để bảo vệ hệ thống.</p>
+
+    <div class="threat-grid">
+      <div class="threat-card">
+        <h5>IP Spoofing</h5>
+        <p>Giả mạo địa chỉ IP nguồn trong gói tin, đánh lừa hệ thống đích. Thường dùng trong DDoS reflection attacks.</p>
+      </div>
+      <div class="threat-card">
+        <h5>DDoS Attack</h5>
+        <p>Tấn công từ chối dịch vụ bằng cách dùng hàng nghìn IP (botnet) để làm ngập lụt băng thông mục tiêu.</p>
+      </div>
+      <div class="threat-card">
+        <h5>IP Tracking</h5>
+        <p>Xác định vị trí địa lý tương đối của người dùng qua IP — với độ chính xác đến cấp thành phố/ISP.</p>
+      </div>
+      <div class="threat-card">
+        <h5>Port Scanning</h5>
+        <p>Kẻ tấn công quét các cổng mở trên IP mục tiêu để tìm điểm yếu và dịch vụ dễ khai thác.</p>
+      </div>
+      <div class="threat-card">
+        <h5>Man-in-the-Middle</h5>
+        <p>ARP Poisoning để chặn và đọc lưu lượng giữa hai thiết bị trong cùng mạng LAN.</p>
+      </div>
+      <div class="threat-card">
+        <h5>BGP Hijacking</h5>
+        <p>Chiếm quyền kiểm soát các dải IP lớn ở cấp routing toàn cầu — từng gây ra những sự cố Internet nghiêm trọng.</p>
+      </div>
+    </div>
+
+    <h3>Cách Bảo Vệ</h3>
+    <p>Các biện pháp phổ biến bao gồm: sử dụng <strong>VPN</strong> để ẩn IP thực, cấu hình <strong>Firewall</strong> lọc traffic theo IP/Port, dùng <strong>IDS/IPS</strong> phát hiện bất thường, bật <strong>BCP38</strong> tại ISP để ngăn IP spoofing, và triển khai <strong>RPKI</strong> để xác thực route BGP.</p>
+  </div>
+</section>
+
+<!-- ═══════════════ TƯƠNG LAI ═══════════════ -->
+<section id="future">
+  <div class="container">
+    <span class="section-number">§ 09 — Tương Lai</span>
+    <h2>Tương Lai Của Địa Chỉ IP</h2>
+
+    <h3>IoT và Cuộc Bùng Nổ Địa Chỉ</h3>
+    <p>Theo dự báo, đến năm 2030, sẽ có hơn <strong>50 tỷ thiết bị IoT</strong> kết nối Internet — từ đồng hồ thông minh, xe tự lái, cảm biến nông nghiệp, đến thiết bị y tế cấy vào cơ thể người. IPv6 với không gian địa chỉ gần như vô hạn chính là giải pháp tương lai.</p>
+
+    <blockquote class="pull">
+      IPv6 cho phép gán một địa chỉ IP riêng cho từng hạt cát trên Trái Đất — và vẫn còn thừa hàng nghìn lần.
+    </blockquote>
+
+    <h3>IP trong 5G và Edge Computing</h3>
+    <p>Mạng 5G kết hợp Edge Computing sẽ tạo ra hàng triệu "điểm xử lý" phân tán với địa chỉ IP riêng. Độ trễ siêu thấp (<1ms) đòi hỏi việc định tuyến IP phải thông minh và cực kỳ nhanh — thúc đẩy sự phát triển của <strong>Segment Routing</strong> và <strong>SD-WAN</strong>.</p>
+
+    <h3>CGNAT và Thực Tế Của IPv4</h3>
+    <p>Dù IPv4 đã "cạn kiệt" về mặt kỹ thuật, nó vẫn sẽ tồn tại song hành với IPv6 trong nhiều năm tới nhờ <strong>CGNAT (Carrier-Grade NAT)</strong> — kỹ thuật cho phép nhiều hộ gia đình dùng chung một IP Public ở cấp ISP. Đây là lý do tại sao Việt Nam vẫn có thể cấp IP Internet cho hàng chục triệu thuê bao dù IPv4 đã hết.</p>
+
+    <h3>Quyền Riêng Tư và IP</h3>
+    <p>Phong trào bảo vệ quyền riêng tư số đang đặt câu hỏi: địa chỉ IP có phải là dữ liệu cá nhân không? Tại EU theo GDPR, câu trả lời là <strong>Có</strong>. Điều này đang thay đổi cách các công ty thu thập, lưu trữ và sử dụng thông tin IP của người dùng.</p>
+  </div>
+</section>
+
+<!-- ═══════════════ ỨNG DỤNG ═══════════════ -->
+<section id="apps">
+  <div class="container">
+    <span class="section-number">§ 10 — Ứng Dụng</span>
+    <h2>Ứng Dụng Thực Tiễn</h2>
+
+    <h3>1. Quản Trị Mạng &amp; CNTT</h3>
+    <p>Kỹ thuật viên dùng địa chỉ IP để cấu hình router, switch, tường lửa; phân vùng mạng theo subnet; thiết kế kiến trúc VLAN; troubleshoot kết nối; và giám sát lưu lượng mạng theo IP.</p>
+
+    <h3>2. Phát Triển Web &amp; Cloud</h3>
+    <p>Developer dùng IP để cấu hình server ảo (VPS), thiết lập reverse proxy (Nginx, Traefik), giới hạn truy cập API theo IP whitelist, tích hợp CDN, và cấu hình firewall bảo vệ ứng dụng web.</p>
+
+    <div class="code-block">
+      <span class="label">NGINX CONFIG</span>
+<span class="cm"># Chặn IP xấu, cho phép dải IP tin cậy</span>
+<span class="kw">location</span> /admin {
+    <span class="op">allow</span>  <span class="num">203.162.0.0/24</span>;  <span class="cm"># Văn phòng HN</span>
+    <span class="op">allow</span>  <span class="num">192.168.1.0/24</span>;  <span class="cm"># LAN nội bộ</span>
+    <span class="op">deny</span>   <span class="str">all</span>;              <span class="cm"># Chặn toàn bộ</span>
+}
+    </div>
+
+    <h3>3. An Ninh Mạng &amp; Điều Tra Số</h3>
+    <p>Các chuyên gia bảo mật phân tích log IP để phát hiện xâm nhập, theo dõi hành vi bất thường, truy vết nguồn gốc tấn công, và phối hợp với cơ quan chức năng điều tra tội phạm mạng.</p>
+
+    <h3>4. Phát Trực Tiếp &amp; Nội Dung Số</h3>
+    <p>Netflix, YouTube, và các dịch vụ streaming dùng IP để xác định quốc gia người dùng (geo-blocking), tối ưu hóa route CDN gần nhất, và phân tích hành vi xem theo khu vực địa lý.</p>
+
+    <h3>5. Thương Mại Điện Tử &amp; Chống Gian Lận</h3>
+    <p>Hệ thống thanh toán kiểm tra IP để phát hiện giao dịch đáng ngờ: nếu tài khoản đăng nhập từ Việt Nam nhưng đặt hàng qua IP Đông Âu, đây là dấu hiệu cần xác minh bổ sung.</p>
+
+    <h3>6. Nghiên Cứu &amp; Học Thuật</h3>
+    <p>Các tổ chức như RIPE NCC, ARIN, và APNIC phân tích xu hướng phân bổ IP toàn cầu, nghiên cứu tốc độ chuyển đổi IPv6, và giám sát sức khỏe của hạ tầng Internet.</p>
+
+    <div class="info-box">
+      <h4>🔧 Lệnh Hữu Ích để Kiểm Tra IP</h4>
+      <p><strong>Windows:</strong> <code style="background:rgba(255,255,255,0.1);padding:1px 6px">ipconfig /all</code> | <code style="background:rgba(255,255,255,0.1);padding:1px 6px">nslookup google.com</code> | <code style="background:rgba(255,255,255,0.1);padding:1px 6px">tracert 8.8.8.8</code></p>
+      <p><strong>Linux/macOS:</strong> <code style="background:rgba(255,255,255,0.1);padding:1px 6px">ip addr show</code> | <code style="background:rgba(255,255,255,0.1);padding:1px 6px">dig google.com</code> | <code style="background:rgba(255,255,255,0.1);padding:1px 6px">traceroute 8.8.8.8</code></p>
+      <p><strong>Web:</strong> Truy cập <code style="background:rgba(255,255,255,0.1);padding:1px 6px">whatismyip.com</code> hoặc <code style="background:rgba(255,255,255,0.1);padding:1px 6px">ipinfo.io</code> để xem IP Public của bạn.</p>
+    </div>
+
+    <!-- Interactive IP checker -->
+    <div style="background:var(--ink);color:var(--paper);padding:36px;margin:36px 0;border-radius:4px;">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;letter-spacing:0.2em;color:#6c7086;margin-bottom:16px;text-transform:uppercase">Công Cụ Nhỏ</div>
+      <div style="font-family:'Playfair Display',serif;font-size:1.3rem;margin-bottom:20px;color:var(--gold)">Kiểm Tra Địa Chỉ IPv4</div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px;">
+        <input type="text" id="ipInput" placeholder="Nhập địa chỉ IP (vd: 192.168.1.1)" 
+          style="flex:1;min-width:200px;background:rgba(255,255,255,0.07);border:1px solid #3a3020;color:var(--paper);font-family:'JetBrains Mono',monospace;padding:12px 16px;font-size:0.88rem;border-radius:2px;outline:none;">
+        <button onclick="checkIP()" 
+          style="background:var(--accent);color:#fff;border:none;padding:12px 24px;font-family:'JetBrains Mono',monospace;font-size:0.8rem;letter-spacing:0.15em;text-transform:uppercase;cursor:pointer;border-radius:2px;">
+          PHÂN TÍCH
+        </button>
+      </div>
+      <div id="ipResult" style="font-family:'JetBrains Mono',monospace;font-size:0.85rem;line-height:2;color:#9399b2;min-height:60px;"></div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════ FOOTER ═══════════════ -->
+<footer>
+  <div>
+    <span>IP ADDRESS</span> — BÀI BÁO CHUYÊN SÂU<br>
+    <span style="color:#4a4030">Nền Tảng Của Thế Giới Số</span>
+  </div>
+  <div style="text-align:center">
+    IPv4 · IPv6 · Subnet · DNS · NAT · Security<br>
+    <span style="color:#4a4030">© 2026 — Được viết với kiến thức kỹ thuật chuyên sâu</span>
+  </div>
+  <div style="text-align:right">
+    <span>Phiên Bản 1.0</span><br>
+    <span style="color:#4a4030">26.03.2026</span>
+  </div>
+</footer>
+
+<script>
+// ───── Progress Bar ─────
+window.addEventListener('scroll', () => {
+  const docH = document.documentElement.scrollHeight - window.innerHeight;
+  const prog = (window.scrollY / docH) * 100;
+  document.getElementById('progress-bar').style.width = prog + '%';
+});
+
+// ───── IP Rain Background ─────
+const rain = document.getElementById('ipRain');
+const ips = ['10.0.0.1','172.16.0.1','192.168.1.1','8.8.8.8','255.255.255.0',
+             '2001:db8::1','fe80::1','::1','203.162.0.1','1.1.1.1',
+             '/24','/16','/8','0.0.0.0','127.0.0.1','169.254.1.1'];
+
+for (let i = 0; i < 18; i++) {
+  const s = document.createElement('span');
+  s.textContent = ips[i % ips.length];
+  s.style.left = (Math.random() * 100) + '%';
+  s.style.animationDuration = (8 + Math.random() * 12) + 's';
+  s.style.animationDelay = (-Math.random() * 20) + 's';
+  rain.appendChild(s);
+}
+
+// ───── Reveal on Scroll ─────
+const revealEls = document.querySelectorAll('.reveal');
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.15 });
+revealEls.forEach(el => observer.observe(el));
+
+// Also reveal sections
+document.querySelectorAll('section, h2, h3, .info-box, .compare-grid, .threat-card, .timeline-item').forEach(el => {
+  if (!el.classList.contains('reveal')) {
+    el.classList.add('reveal');
+    observer.observe(el);
+  }
+});
+
+// ───── IP Analyzer Tool ─────
+function checkIP() {
+  const raw = document.getElementById('ipInput').value.trim();
+  const out = document.getElementById('ipResult');
+  
+  if (!raw) {
+    out.innerHTML = '<span style="color:#f38ba8">⚠ Vui lòng nhập một địa chỉ IP.</span>';
+    return;
+  }
+
+  const parts = raw.split('.');
+  if (parts.length !== 4 || parts.some(p => isNaN(p) || p === '' || +p < 0 || +p > 255)) {
+    out.innerHTML = '<span style="color:#f38ba8">✗ Địa chỉ không hợp lệ. Định dạng đúng: X.X.X.X (0–255).</span>';
+    return;
+  }
+
+  const octets = parts.map(Number);
+  const [a, b, c, d] = octets;
+
+  // Determine class
+  let cls = '', clsRange = '';
+  if (a >= 1 && a <= 126) { cls = 'Class A'; clsRange = '1.0.0.0 – 126.255.255.255'; }
+  else if (a === 127) { cls = 'Loopback'; clsRange = '127.0.0.1'; }
+  else if (a >= 128 && a <= 191) { cls = 'Class B'; clsRange = '128.0.0.0 – 191.255.255.255'; }
+  else if (a >= 192 && a <= 223) { cls = 'Class C'; clsRange = '192.0.0.0 – 223.255.255.255'; }
+  else if (a >= 224 && a <= 239) { cls = 'Multicast (Class D)'; clsRange = '224.0.0.0 – 239.255.255.255'; }
+  else { cls = 'Reserved (Class E)'; clsRange = '240.0.0.0 – 255.255.255.255'; }
+
+  // Private check
+  const isPrivate = (a === 10) ||
+    (a === 172 && b >= 16 && b <= 31) ||
+    (a === 192 && b === 168);
+  const isLoopback = a === 127;
+  const isLinkLocal = a === 169 && b === 254;
+
+  // Binary
+  const bin = octets.map(o => o.toString(2).padStart(8, '0')).join('.');
+
+  out.innerHTML = `
+<span style="color:#a6e3a1">✓ Địa chỉ hợp lệ: ${raw}</span>
+
+<span style="color:#89b4fa">● Phân Lớp:</span>    ${cls} (${clsRange})
+<span style="color:#89b4fa">● Loại:</span>         ${isLoopback ? '🔄 Loopback (localhost)' : isLinkLocal ? '🔗 Link-Local (APIPA)' : isPrivate ? '🏠 Private (Mạng nội bộ)' : '🌐 Public (Internet)'}
+<span style="color:#89b4fa">● Nhị phân:</span>     ${bin}
+<span style="color:#89b4fa">● Hex:</span>          ${octets.map(o => o.toString(16).padStart(2,'0').toUpperCase()).join(':')}
+<span style="color:#89b4fa">● Subnet /24:</span>   ${a}.${b}.${c}.0 → ${a}.${b}.${c}.255 (254 hosts)
+  `.trim();
+}
+
+document.getElementById('ipInput').addEventListener('keypress', e => {
+  if (e.key === 'Enter') checkIP();
+});
+
+// ───── Live Date ─────
+const d = new Date();
+document.getElementById('live-date').textContent =
+  String(d.getDate()).padStart(2,'0') + '.' +
+  String(d.getMonth()+1).padStart(2,'0') + '.' +
+  d.getFullYear();
+</script>
+</body>
+</html>
